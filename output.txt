@@ -1,0 +1,8 @@
+100
+100
+grid_dx is 5
+grid_dx is 5
+xDomainMax is 1000
+yDomainMax is 1000
+numberGridsX is 200
+numberGridsY is 200

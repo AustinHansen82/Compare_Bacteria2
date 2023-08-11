@@ -6,6 +6,8 @@
 #include "Bacteria.hpp"
 #include "Diffusion2D.hpp"
 #include "ranum2.h"
+#include <random>
+#include <utility>
 
 #endif /* TissueBacteria_hpp */
 
@@ -20,7 +22,8 @@ enum InitialCondition
     uniform = 0 ,
     circular = 1 ,
     swarm = 2 ,
-    center = 3
+    center = 3,
+    alongNetwork=4
 };
 
 
@@ -73,8 +76,8 @@ public:
     int shiftx = 0 ;        //this value changes in the MinDistance function, call MinDistance before using this value
     int shifty = 0 ;        //this value changes in the MinDistance function, call MinDistance before using this value
     
-    double domainx = 1000.0 ;
-    double domainy = 1000.0 ;
+    double domainx = 8000.0 ;
+    double domainy = 8000.0 ;
     double dx= 0.5 ;
     double dy= 0.5 ;
     int nx = static_cast<int>(domainx/dx) ;               //number of grids in X-axis
@@ -130,6 +133,8 @@ public:
     void CircularInitialization () ;
     void SwarmingInitialization () ;
     void CenterInitialization () ;
+    void AlongNetworkInitialization () ;
+    
     void ljNodesPosition () ;
     void InitialReversalTime () ;
     vector<vector<double> > Cal_Diffusion2D (double xMin, double xMax, double yMin, double yMax,int nGridX, int nGridY ,vector<vector<double> > sources, vector<double> pSource) ;
@@ -160,7 +165,7 @@ public:
     void SlimeTrace () ;
     void TurnOrientation () ;
     double Cal_OrientationBacteria (int i) ;
-    void UpdateReversalFrequency () ;
+    void UpdateReversalFrequency (double l) ;
     void Update_BacteriaMaxDuration () ;
     double Cal_ChemoGradient (int i) ;
     double Cal_ChemoGradient2 (int i) ;
@@ -176,9 +181,10 @@ public:
     void Update_MotilityMetabolism_Only2 (double tmpDt) ;
     void WriteSwitchProbabilities () ;
     void WriteSwitchProbabilitiesByBacteria();
+    void WriteReversalDataByBacteria(int i);
     void Update_MM_Legand () ;
     
-    void WriteBacteria_AllStats () ;
+    void WriteBacteria_AllStats (double l) ;
     void LogLinear_RNG () ;
 
     

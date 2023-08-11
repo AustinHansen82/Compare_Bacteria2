@@ -36,6 +36,7 @@ public:
     double initX = 540.0 ;
     double initY = 500 ;
     int init_Count = 4 ;
+    double Bacteria_inLiquid = 1.0 ;
     
     int machineID = 1 ;
     string folderName = "./animation/machine" + to_string(machineID) + "/" ;

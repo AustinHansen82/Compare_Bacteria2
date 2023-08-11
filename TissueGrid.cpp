@@ -1,5 +1,10 @@
 
 #include "TissueGrid.hpp"
+#include "TissueBacteria.hpp"
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <iomanip> // for std::setprecision and std::fixed
 
 TissueGrid::TissueGrid ()
 {
@@ -18,6 +23,8 @@ void TissueGrid::DomainBoundaries(double xMin, double xMax, double yMin, double 
     grid_dx = static_cast<double> ( ( xDomainMax - xDomainMin ) / numberGridsX ) ;
     grid_dy = static_cast<double> ( ( yDomainMax - yDomainMin ) / numberGridsY ) ;
     grid_dt *= 1.0 /Diffusion ;
+    //grid_dt = 0.01 ;
+
 }
 
 
@@ -46,6 +53,7 @@ void TissueGrid::ClearChanges()
 
 void TissueGrid::DiffusionChanges()
 {
+
     double tmpChange = 0.0 ;
     
     for (int i =0; i < numberGridsY; i++)
@@ -142,9 +150,10 @@ void TissueGrid::UpdateChanges()
 
 void TissueGrid::EulerMethod()
 {
+    std::cout << "BreakEuler" << std::endl;
     int l = 0 ;
     bool status = false ;
-    while (status == false && l< 100) //10000
+    while (status == false && l< 1) //10000
     {
         status = true ;
         double smallValue = 0.0001 ;
@@ -165,13 +174,15 @@ void TissueGrid::EulerMethod()
             }
         }
         UpdateChanges() ;
-        if (l%100 == 0)
+        if (l%1000 == 0)
         {
-            //ParaViewGrids(l/100) ;
+            //ParaViewGrids(l/10) ;
         }
         l++ ;
+        std::cout << "l is " << l << std::endl;
         
     }
+    std::cout << "BreakEuler2" << std::endl;
     RoundToZero() ;
     ParaViewGrids(l/100) ;
     cout<<l<<endl ;
@@ -233,13 +244,16 @@ void TissueGrid::RoundToZero()
             }
         }
     }
-   /* double cntrX = numberGridsX/2.0 ;
+    /*
+    double cntrX = numberGridsX/2.0 ;
     double cntrY = numberGridsY/2.0 ;
     for (int i = 0; i<numberGridsY; i++)
     {
         for (int j=0; j< numberGridsX; j++)
         {
-            grids.at(j).at(i).value = 182.0*exp((100.0*sqrt(2.0)-(sqrt(pow((j-cntrX),2.0)+pow((i-cntrY),2.0))))/((100.0*sqrt(2.0))/grad_scale));
+            //grids.at(j).at(i).value = 182.0*exp((100.0*sqrt(2.0)-(sqrt(pow((j-cntrX),2.0)+pow((i-cntrY),2.0))))/((100.0*sqrt(2.0))/grad_scale)); // Radial Exponential Function
+            grids.at(j).at(i).value = grad_scale*(sqrt(pow((100.0),2.0)+pow((100.0),2.0))-sqrt(pow((j-cntrX),2.0)+pow((i-cntrY),2.0))); // Radial Linear Function
+            grids.at(j).at(i).value = 1; // Constant Function
             //grids.at(j).at(i).value = pow(1/(1+sqrt(pow((j-cntrX)/30.0,2)+pow((i-cntrY)/30.0,2))),1.5);
             //grids.at(j).at(i).value = 182.0*exp(i/50.0);
             //grids.at(j).at(i).value = 182.0;
@@ -247,6 +261,54 @@ void TissueGrid::RoundToZero()
         }
     }
     */
+    //std::ifstream file("external_concentrations4_444444444444445_new.txt");
+    //std::ifstream file("external_concentrations40.888888888888886_new.txt");
+    //std::ifstream file("external_concentrations40.888888888888886_newflipupd.txt");
+    //std::ifstream file("external_concentrations40.888888888888886_newtrans.txt");
+    //std::ifstream file("external_concentrations40.888888888888886_fliptransup.txt");
+    //std::ifstream file("external_concentrations50.67_new.txt");
+    //std::ifstream file("external_concentrations50.67_newtrans.txt");
+    //std::ifstream file("external_concentrations50.67_fliptransup.txt");
+    //std::ifstream file("external_concentrations8.88888888888889_new.txt");
+    //std::ifstream file("external_concentrations120.88888888888889_new.txt");
+    //std::ifstream file("external_concentrations156.44444444444446_new.txt");
+    //std::ifstream file("external_concentrations_t=176000.00_new.txt");
+    //std::ifstream file("external_concentrations_t=176000.00_newflipupd.txt");
+    std::ifstream file("external_concentrations_t=176000.00_newtrans.txt");
+    //std::ifstream file("external_concentrations_t=176000.00_fliptransup.txt");
+
+        std::vector<std::vector<double>> External_Concentration;
+        std::string line;
+        while (std::getline(file, line))
+        {
+            std::vector<double> row;
+            std::stringstream ss(line);
+            std::string value;
+            while (std::getline(ss, value, ','))
+            {
+                row.push_back(std::stod(value));
+            }
+            External_Concentration.push_back(row);
+        }
+
+            for (int i = 0; i<numberGridsY; i++)
+            {
+                for (int j=0; j< numberGridsX; j++)
+                {
+                    grids.at(j).at(i).value = External_Concentration[j][i];
+
+                }
+            }
+    std::ofstream outFile("External_Concentration4.txt");
+    for(const auto &row : grids)
+    {
+        for(const auto &grid : row)
+        {
+            outFile << std::fixed << std::setprecision(8) << grid.value << ',';
+        }
+        outFile << '\n';
+    }
+    outFile.close();
     
 }
 

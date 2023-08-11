@@ -7,7 +7,7 @@
 //
 
 #include "TissueBacteria.hpp"
-
+#include <random>
 using constants::pi;
 
 TissueBacteria:: TissueBacteria()
@@ -118,6 +118,10 @@ void TissueBacteria::Bacteria_Initialization()
     else if (initialCondition == center)
     {
         CenterInitialization() ;
+    }
+    else if (initialCondition == alongNetwork)
+    {
+        AlongNetworkInitialization () ;
     }
 }
 //-----------------------------------------------------------------------------------------------------
@@ -301,6 +305,99 @@ void TissueBacteria::CenterInitialization()
     }
 }
 
+//-----------------------------------------------------------------------------------------------------
+void TissueBacteria::AlongNetworkInitialization()
+{
+    std::vector<std::pair<int, int>> liquid_indices;
+    
+    for (int j = 0; j < ny; j++)
+    {
+        for (int i = 0; i < nx; i++)
+        {
+            if (slime[i][j] > 1)
+            {
+                liquid_indices.push_back({i,j});
+            }
+        }
+    }
+
+    
+    
+    double raduis = 0.2 * sqrt(domainx * domainx  )/2.0 ;
+    double cntrX = domainx/2.0 ;
+    double cntrY = domainy/2.0 ;
+    
+    double a ;
+    double b ;
+    for (int i=0 , j=(nnode-1)/2 ; i<nbacteria; i++)
+    {
+        std::cout<< "present"<< std::endl;
+        random_device rand;
+        mt19937 gen(rand());
+        uniform_int_distribution<>dis(0, liquid_indices.size()-1);
+        int random_number = dis(gen);
+        std::pair<int, int> randomPair = liquid_indices[random_number];
+
+        bacteria[i].nodes[j].x = randomPair.first*dx ;
+        bacteria[i].nodes[j].y = randomPair.second*dy  ;
+        
+        a= gasdev(&idum) ;
+        b=gasdev(&idum) ;
+        a= a/ sqrt(a*a+b*b) ;
+        b = b/ sqrt(a*a+b*b) ;
+        for (int n=1; n<=(nnode-1)/2; n++)
+        {
+           bacteria[i].nodes[j+n].x = bacteria[i].nodes[j+n-1].x + x0 * a ; // or nodes[j].x + n * x0 * a
+           bacteria[i].nodes[j-n].x = bacteria[i].nodes[j-n+1].x - x0 * a ;
+           bacteria[i].nodes[j+n].y = bacteria[i].nodes[j+n-1].y + x0 * b ;
+           bacteria[i].nodes[j-n].y = bacteria[i].nodes[j-n+1].y - x0 * b ;
+        }
+    }
+}
+
+
+//-----------------------------------------------------------------------------------------------------
+/*
+void TissueBacteria::AlongNetworkInitialization()
+{
+
+    double tmpX ;
+    double tmpY ;
+    int m_x ;
+    int n_y ;
+    double a ;
+    double b ;
+    
+    for (int i=0 , j=(nnode-1)/2 ; i<nbacteria; i++)
+    {
+        do {
+            tmpX = (rand() / (RAND_MAX + 1.0) ) * domainx ;
+            tmpY = (rand() / (RAND_MAX + 1.0) ) * domainy ;
+            m_x = (static_cast<int> (round ( fmod (tmpX + domainx , domainx) / dx ) ) ) % nx ;
+            n_y = (static_cast<int> (round ( fmod (tmpY + domainy , domainy) / dy ) ) ) % ny ;
+        } while (slime[m_x][n_y] > 1  );
+        
+        bacteria[i].nodes[j].x = tmpX ;
+        bacteria[i].nodes[j].y = tmpY ;
+        
+        //cout<< tmpX<<'\t'<<tmpY<< '\t'<< m_x<< '\t'<< n_y<<endl ;
+        
+        a= gasdev(&idum) ;
+        b=gasdev(&idum) ;
+        a= a/ sqrt(a*a+b*b) ;
+        b = b/ sqrt(a*a+b*b) ;
+        for (int n=1; n<=(nnode-1)/2; n++)
+        {
+            // or nodes[j].x + n * equilibriumLength * a
+            bacteria[i].nodes[j+n].x = bacteria[i].nodes[j+n-1].x + x0 * a ;
+            bacteria[i].nodes[j-n].x = bacteria[i].nodes[j-n+1].x - x0 * a ;
+            bacteria[i].nodes[j+n].y = bacteria[i].nodes[j+n-1].y + x0 * b ;
+            bacteria[i].nodes[j-n].y = bacteria[i].nodes[j-n+1].y - x0 * b ;
+        }
+    }
+    
+}
+ */
 //-----------------------------------------------------------------------------------------------------
 void TissueBacteria::ljNodesPosition ()
 {
@@ -1096,15 +1193,29 @@ double TissueBacteria:: SlimeTrailFollowing (int i, double R)        // i th bac
 //-----------------------------------------------------------------------------------------------------
 void TissueBacteria:: Reverse (int i)
 {
+    WriteReversalDataByBacteria(i);
    // bacteria[i].directionOfMotion = ! bacteria[i].directionOfMotion ;
     bacteria[i].turnStatus = true ;
     bacteria[i].turnTime = 0.0 ;
    
   //  bacteria[i].turnAngle =(2.0*(rand() / (RAND_MAX + 1.0))-1.0 ) *  bacteria[i].maxTurnAngle ;    //uniform distribution
-    if (bacteria[i].attachedToFungi == false)
+    if (bacteria[i].attachedToFungi == false || inLiquid == true)
     {
         //bacteria[i].turnAngle = gasdev(&idum) *  bacteria[i].maxTurnAngle ;                //guassian distribution
         bacteria[i].turnAngle = (2.0*(rand() / (RAND_MAX + 1.0))-1.0 ) * bacteria[i].maxTurnAngle ;
+        /*
+        // Create a random number engine (Mersenne Twister in this case)
+        std::mt19937 rng(std::random_device{}());
+            
+        // Create a uniform real distribution between 0 and 1
+        //std::uniform_real_distribution<double> distribution(0.0, 1.0);
+        std::uniform_real_distribution<double> distribution(-1, 1.0);
+            
+        // Generate a random number between 0 and 1
+        double random_number = distribution(rng);
+        //bacteria[i].turnAngle = std::log((1.00181 - random_number) / 1.00181) / (-12.35);
+        bacteria[i].turnAngle = random_number * .51144; //bacteria[i].maxTurnAngle ;
+        */
         //test turnAngle
         //bacteria[i].turnAngle = 0.0 ;
         /*
@@ -1152,6 +1263,7 @@ void TissueBacteria:: Reverse (int i)
         bacteria[i].ljnodes[j].y = (bacteria[i].nodes[j].y + bacteria[i].nodes[j+1].y)/2 ;
     }
     Cal_OrientationBacteria (i) ;
+    WriteReversalDataByBacteria(i);
     
 }
 //-----------------------------------------------------------------------------------------------------
@@ -1585,9 +1697,8 @@ void TissueBacteria:: TurnOrientation ()
             bacteria[i].nodes[0].fMotorx = fTotal * cos(bacteria[i].turnAngle + orientation ) ;
             bacteria[i].nodes[0].fMotory = fTotal * sin(bacteria[i].turnAngle + orientation ) ;
             bacteria[i].turnTime += dt ;
-            
             if (bacteria[i].turnTime > turnPeriod)
-            {
+            {   WriteReversalDataByBacteria(i);
                 bacteria[i].turnStatus = false ;
                 bacteria[i].turnTime = 0.0 ;
                 bacteria[i].turnAngle = 0.0 ;
@@ -1625,7 +1736,7 @@ double TissueBacteria:: Cal_OrientationBacteria (int i)
     return orientationBacteria ;
 }
 
-void TissueBacteria:: UpdateReversalFrequency ()
+void TissueBacteria:: UpdateReversalFrequency (double l)
 {
    
     for (int i=0; i< nbacteria ; i++)
@@ -1665,6 +1776,19 @@ void TissueBacteria:: UpdateReversalFrequency ()
                 //bacteria[i].reversalPeriod = max(tmpPeriod, minimumRunTime ) ;
                 //pessimistic
                 //bacteria[i].reversalPeriod = 1.0/ reversalRate ;      //constant run durations
+                ofstream strvect;
+                strvect.open(statsFolder + "WriteGradsByBacteria" + to_string(i) + ".txt", ios::app);
+                {
+                   // strSwitchP << bacteria[i].motilityMetabolism.switchProbability << '\t'  ;
+                    strvect << setw(10) << 0 << '\t'
+                            << setw(10) << 0 << '\t'
+                            << setw(10) << 0 << '\t'
+                            << setw(10) << l;
+                                
+                }
+                strvect<< endl ;
+
+                
                 if (bacteria[i].wrapMode == false)
                 {
                     bacteria[i].reversalPeriod = max(bacteria[i].maxRunDuration, minimumRunTime) ;
@@ -1682,6 +1806,18 @@ void TissueBacteria:: UpdateReversalFrequency ()
                 
                 //pessimistic
                 //double tmpPeriod =1.0 /( reversalRate * exp(tmpChemoStrength * (-1.0 *fmotor * ds   /* *cos(bacteria[i].orientation - preferedAngle )  */ )) ) ;         // constant run duration
+                ofstream strvect;
+                strvect.open(statsFolder + "WriteGradsByBacteria" + to_string(i) + ".txt", ios::app);
+                {
+                   // strSwitchP << bacteria[i].motilityMetabolism.switchProbability << '\t'  ;
+                    strvect << setw(10) << tmpChemoStrength << '\t' 
+                            << setw(10) << fmotor << '\t'
+                            << setw(10) << ds << '\t'
+                            << setw(10) << l;
+                                
+                }
+                strvect<< endl ;
+
                 double tmpPeriod =  bacteria[i].maxRunDuration /( exp(tmpChemoStrength * (-1.0 *fmotor * ds   /* *cos(bacteria[i].orientation - preferedAngle )  */ )) ) ;
                 //test
                 if (bacteria[i].wrapMode == false)
@@ -2108,6 +2244,21 @@ void TissueBacteria:: WriteSwitchProbabilitiesByBacteria()
     }
 }
 
+void TissueBacteria:: WriteReversalDataByBacteria(int i)
+{   double orientation_print = Cal_OrientationBacteria(i);
+        ofstream strReversal1;
+        strReversal1.open(statsFolder + "WriteReversalData_Bacteria" + to_string(i) + ".txt", ios::app);
+        {
+            strReversal1 << bacteria[i].turnStatus << '\t'
+            << setw(10) << bacteria[i].turnAngle << '\t'
+            << setw(10) << bacteria[i].nodes[0].fMotorx << '\t'
+            << setw(10) << bacteria[i].nodes[0].fMotory << '\t'
+            << setw(10) << orientation_print << '\t';
+                
+        }
+        strReversal1<< endl ;
+}
+
 void TissueBacteria::Update_MM_Legand()
 {
     for (int i = 0; i< nbacteria; i++)
@@ -2153,7 +2304,7 @@ void TissueBacteria::Update_BacteriaMaxDuration()
     }
 }
 
-void TissueBacteria::WriteBacteria_AllStats()
+void TissueBacteria::WriteBacteria_AllStats(double l)
 {
     int index = index1 ;
     string statFileName = statsFolder + animationName + to_string(index)+ ".txt" ;
@@ -2162,7 +2313,7 @@ void TissueBacteria::WriteBacteria_AllStats()
     for (uint i = 0 ; i< nbacteria; i++)
     {
         stat<< bacteria[i].nodes[(nnode-1)/2].x <<'\t'<< bacteria[i].nodes[(nnode-1)/2].y<<'\t'
-        <<bacteria[i].locVelocity << '\t' << bacteria[i].locFriction << '\t' << Cal_OrientationBacteria(i) << '\t' << bacteria[i].oldChem  ;
+        <<bacteria[i].locVelocity << '\t' << bacteria[i].locFriction << '\t' << Cal_OrientationBacteria(i) << '\t' << bacteria[i].oldChem << '\t' << l ;
         
         stat<<endl ;
     }

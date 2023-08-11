@@ -21,8 +21,12 @@ Fungi driver (Fungi fungi){
     double init_hyphae_count = fungi.init_Count;   // Number of initial hyphae segments
     
     // open input file
-    std::ifstream inputFile("hyphal_coordinates40.888888888888886.txt");
-
+    //std::ifstream inputFile("hyphal_coordinates4.444444444444445 copy.txt");
+    //std::ifstream inputFile("hyphal_coordinates8.88888888888889 copy.txt");
+    //std::ifstream inputFile("hyphal_coordinates40.888888888888886 copy.txt");
+    //std::ifstream inputFile("hyphal_coordinates120.88888888888889 copy.txt");
+    //std::ifstream inputFile("hyphal_coordinates156.44444444444446 copy.txt");
+    std::ifstream inputFile("NoFusion_AllHyphRelease_homogenousEnv_initGluc20mm_branch0_3_brCost1x_200x200x0.20umGrid_trnspse_t=176000.00_hyphal_coordinates_run0 copy.txt");
     // read each line of the file
     std::string line;
     int hyphae_counter = 0;
@@ -35,6 +39,29 @@ Fungi driver (Fungi fungi){
         int token_counter = 0;
         while (std::getline(ss, value, ','))
         {
+            
+            if (token_counter == 0)
+            {
+                new_hy.x1 = std::stod(value);
+                new_hy.x1 = (new_hy.x1) + 4000;
+            }
+            else if (token_counter == 1)
+            {
+                new_hy.y1 = std::stod(value);
+                new_hy.y1 = (new_hy.y1) + 4000;
+            }
+            else if (token_counter == 2)
+            {
+                new_hy.x2 = std::stod(value);
+                new_hy.x2 = (new_hy.x2) + 4000;
+            }
+            else if (token_counter == 3)
+            {
+                new_hy.y2 = std::stod(value);
+                new_hy.y2 = (new_hy.y2) + 4000;
+            }
+            
+            /*
             if (token_counter == 0)
             {
                 new_hy.x1 = std::stod(value);
@@ -55,6 +82,29 @@ Fungi driver (Fungi fungi){
                 new_hy.y2 = std::stod(value);
                 new_hy.y2 = (new_hy.y2/6) + 500;
             }
+            */
+            /*
+            if (token_counter == 0)
+            {
+                new_hy.x1 = std::stod(value);
+                new_hy.x1 = (new_hy.x1*.05) + 500;
+            }
+            else if (token_counter == 1)
+            {
+                new_hy.y1 = std::stod(value);
+                new_hy.y1 = (new_hy.y1*.05) + 500;
+            }
+            else if (token_counter == 2)
+            {
+                new_hy.x2 = std::stod(value);
+                new_hy.x2 = (new_hy.x2*.05) + 500;
+            }
+            else if (token_counter == 3)
+            {
+                new_hy.y2 = std::stod(value);
+                new_hy.y2 = (new_hy.y2*.05) + 500;
+            }
+            */
             token_counter++;
         }
             

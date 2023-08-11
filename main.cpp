@@ -5,6 +5,8 @@
 #include <chrono>
 #include <string.h>
 #include <stdio.h>
+#include <iostream>
+#include <iomanip>
 using namespace std;
 
 
@@ -72,7 +74,7 @@ int main (int argc, char* argv[])
 {
 
    auto start = std::chrono::high_resolution_clock::now() ;
-   
+    std::cout << "The value of myVariable is: " << tissueBacteria.domainx << std::endl;
    
    initializeSlurmConfig(argc, argv);
    tissueBacteria.UpdateTissue_FromConfigFile() ;
@@ -124,7 +126,7 @@ int main (int argc, char* argv[])
     inverseDt = inverseDt/10 ;
    
    //--------------------------- Initializations -----------------------------------------------------
-   tissueBacteria.Bacteria_Initialization() ;
+   /*tissueBacteria.Bacteria_Initialization() ;
    tissueBacteria.ljNodesPosition() ;
    tissueBacteria.InitialProtein() ;
    tissueBacteria.LogLinear_RNG() ;
@@ -133,38 +135,54 @@ int main (int argc, char* argv[])
    InitialPili () ;
    InitializeMatrix() ;
    tissueBacteria.Initialze_AllRandomForce() ;
-   
+   */
    //--------------------------- Simulation setup -----------------------------------------------------
    fungi = driver(fungi) ;
    //fungi.UpdateFungiFolderNames( tissueBacteria.machineID ) ;
    vector<HyphaeSegment> hyphaeSegments_main = fungi.hyphaeSegments ;
    
    //Bacteria would try to follow hyphae as a highway
-   tissueBacteria.sourceAlongHyphae = true ;
+   tissueBacteria.sourceAlongHyphae = false ;
    tissueBacteria.SlimeTraceHyphae2(fungi) ;
    
    vector<vector<double> > pointSources ;
    
    // no gradient
    //pointSources.resize(2) ;
-   
+    std::cout << "Break1" << std::endl;
    // production at the tips
    pointSources = fungi.tips ;
-   
+    std::cout << "Break2" << std::endl;
    tissueBacteria.sourceProduction.resize(pointSources.at(0).size()) ;
+    std::cout << "Break3" << std::endl;
    fill(tissueBacteria.sourceProduction.begin(), tissueBacteria.sourceProduction.end(), fungi.production) ;
-   
+    std::cout << "Break4" << std::endl;
    //fungi.WriteSourceLoc() ;
    //source for simulation 1
    //pointSources = tissueBacteria.GridSources() ;
    //pointSources = tissueBacteria.sourceChemo ;
    fungi.WriteSourceLoc( pointSources) ;
+    std::cout << "Break5" << std::endl;
    
    tissueBacteria.gridInMain = tissueBacteria.Cal_Diffusion2D(0.0, tissueBacteria.domainx, 0.0, tissueBacteria.domainy ,tissueBacteria.tGrids.numberGridsX , tissueBacteria.tGrids.numberGridsY ,pointSources, tissueBacteria.sourceProduction ) ;
+    std::cout << "Break6" << std::endl;
    tissueBacteria.Pass_PointSources_To_Bacteria(pointSources) ;
+    std::cout << "Break7" << std::endl;
    
    //tissueBacteria.WriteNumberReverse() ;
-   
+    
+    //--------------------------- Initializations -----------------------------------------------------
+    tissueBacteria.Bacteria_Initialization() ;
+    tissueBacteria.ljNodesPosition() ;
+    tissueBacteria.InitialProtein() ;
+    tissueBacteria.LogLinear_RNG() ;
+    tissueBacteria.Update_BacteriaMaxDuration() ;
+    tissueBacteria.InitialReversalTime() ;
+    InitialPili () ;
+    InitializeMatrix() ;
+    tissueBacteria.Initialze_AllRandomForce() ;
+    
+    //--------------------------- Simulation setup -----------------------------------------------------
    //--------------------------- Main loop -----------------------------------------------------------
     for (int l=0; l< (nt+1); l++)
     {
@@ -200,6 +218,7 @@ int main (int argc, char* argv[])
             //  RandomForce() ;
             tissueBacteria.Motor () ;
             tissueBacteria.TurnOrientation() ;
+            
             //  SlimeTrace() ;
             //  Connection() ;
             //  ProteinExchange() ;
@@ -230,14 +249,14 @@ int main (int argc, char* argv[])
                tissueBacteria.ParaView ()  ;
                tissueBacteria.WriteTrajectoryFile() ;
                cout<<(l-initialNt)/inverseDt<<endl ;
-               tissueBacteria.WriteBacteria_AllStats() ;
+               tissueBacteria.WriteBacteria_AllStats(l) ;
                tissueBacteria.WriteSwitchProbabilitiesByBacteria();
                
                 //   cout << averageLengthFree<<'\t'<<nAttachedPili<<endl ;
                 //    cout << coveragePercentage <<endl ;
                
                // reducing time step in the simulation will result in changing the reversal frequencies. Lower number as inputs
-               tissueBacteria.UpdateReversalFrequency() ;       // test Effect of chemoattacrant on reversal motion
+               tissueBacteria.UpdateReversalFrequency(l) ;       // test Effect of chemoattacrant on reversal motion
                tissueBacteria.Update_MotilityMetabolism(.01) ;
                
             }
@@ -264,7 +283,7 @@ void PositionUpdating (double t)
     double totalForceX = 0 ;
     double totalForceY = 0 ;
     for (int i=0; i<nbacteria; i++)
-    {
+        {
        tissueBacteria.bacteria[i].oldLoc.at(0) = tissueBacteria.bacteria[i].nodes[(nnode-1)/2].x ;
        tissueBacteria.bacteria[i].oldLoc.at(1) = tissueBacteria.bacteria[i].nodes[(nnode-1)/2].y ;
        int tmpXIndex = static_cast<int>( fmod( round(fmod( tissueBacteria.bacteria[i].nodes[(nnode-1)/2].x + tissueBacteria.domainx, tissueBacteria.domainx ) / tissueBacteria.dx ), tissueBacteria.nx) ) ;
@@ -335,33 +354,33 @@ void ParaView2 ()
     SignalOut << "Result for paraview 2d code" << endl;
     SignalOut << "ASCII" << endl;
     SignalOut << "DATASET RECTILINEAR_GRID" << endl;
-    SignalOut << "DIMENSIONS" << " " << tissueBacteria.nx  << " " << " " << tissueBacteria.ny << " " << tissueBacteria.nz  << endl;
+    SignalOut << "DIMENSIONS" << " " << tissueBacteria.domainx  << " " << " " << tissueBacteria.domainy << " " << tissueBacteria.nz  << endl;
     
-    SignalOut << "X_COORDINATES " << tissueBacteria.nx << " float" << endl;
+    SignalOut << "X_COORDINATES " << tissueBacteria.domainx << " float" << endl;
     //write(tp + 10000, 106) 'X_COORDINATES ', Nx - 1, ' float'
-    for (int i = 0; i < tissueBacteria.nx ; i++) {
+    for (int i = 0; i < tissueBacteria.nx ; i+=2) {
         SignalOut << tissueBacteria.X[i] << endl;
     }
     
-    SignalOut << "Y_COORDINATES " << tissueBacteria.ny << " float" << endl;
+    SignalOut << "Y_COORDINATES " << tissueBacteria.domainy << " float" << endl;
     //write(tp + 10000, 106) 'X_COORDINATES ', Nx - 1, ' float'
-    for (int j = 0; j < tissueBacteria.ny; j++) {
+    for (int j = 0; j < tissueBacteria.ny; j+=2) {
         SignalOut << tissueBacteria.Y[j] << endl;
     }
     
     SignalOut << "Z_COORDINATES " << tissueBacteria.nz << " float" << endl;
     //write(tp + 10000, 106) 'X_COORDINATES ', Nx - 1, ' float'
-    for (int k = 0; k < tissueBacteria.nz ; k++) {
+    for (int k = 0; k < tissueBacteria.nz ; k+=2) {
         SignalOut << 0 << endl;
     }
     
-    SignalOut << "POINT_DATA " << (tissueBacteria.nx )*(tissueBacteria.ny )*(tissueBacteria.nz ) << endl;
+    SignalOut << "POINT_DATA " << std::fixed << std::setprecision(0) << (tissueBacteria.domainx )*(tissueBacteria.domainy )*(tissueBacteria.nz ) << endl;
     SignalOut << "SCALARS liquid float 1" << endl;
     SignalOut << "LOOKUP_TABLE default" << endl;
     
-    for (int k = 0; k < tissueBacteria.nz ; k++) {
-        for (int j = 0; j < tissueBacteria.ny; j++) {
-            for (int i = 0; i < tissueBacteria.nx; i++) {
+    for (int k = 0; k < tissueBacteria.nz ; k+=2) {
+        for (int j = 0; j < tissueBacteria.ny; j+=2) {
+            for (int i = 0; i < tissueBacteria.nx; i+=2) {
                 SignalOut << tissueBacteria.slime[i][j] << endl;
             }
         }
